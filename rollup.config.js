@@ -15,7 +15,7 @@ export default {
   plugins: [
     nodeResolve({ browser: true }),
     json(),
-    !production && serve({ open: true, contentBase: '_static', port: 3000 }),
+    // !production && serve({ open: true, contentBase: '_static', port: 3000 }),
     !production && livereload({ watch: '_static' }),
     commonjs()
   ]

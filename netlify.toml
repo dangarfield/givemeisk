@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build:frontend"
+  functions = "functions"
+  publish = "./_static"
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
