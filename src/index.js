@@ -664,6 +664,7 @@ const updateStateFromData = () => {
   }
 
   if (persistedResult.length > 0) {
+    document.querySelector('.nav-link[data-tab="results"]').removeAttribute('disabled')
     setTimeout(() => { document.querySelector('.nav-link[data-tab="results"]').click() }, 10)
     document.querySelector('.nav-tab')
     renderResult()
