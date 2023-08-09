@@ -31,7 +31,22 @@ const executeFetchPost = async (path, body) => {
   // console.log('executeFetchGet', url, res)
   return res
 }
+
+// RESULT ORDER FUNCTIONS
+// ADD YOUR OWN ONE AND REGISTER IT IN bindResultSortButton for it to work!
+
+// Don't change the order at all
+const giveawayOrderResultSortOrder = (a, b) => {
+  return a.giveawayOrder - b.giveawayOrder
+}
+
+// This sorts by id for now, maybe change to alphabetical later
+const userResultSortOrder = (a, b) => {
+  return a.winnerDiscordName.localeCompare(b.winnerDiscordName)
+}
+
 let members
+let resultOrderFn = giveawayOrderResultSortOrder
 const sleep = (s) => {
   return new Promise(resolve => setTimeout(resolve, s * 1000))
 }
@@ -135,7 +150,7 @@ const renderResult = () => {
         <th scope="col">Message Sent</th>
       </tr>
     </thead>`
-  html += persistedResult.map(row => `
+  html += persistedResult.sort((a, b) => { return resultOrderFn(a, b) }).map(row => `
     <tr${row.msgSent ? ' class="table-success"' : ''}>
       <th scope="row">${row.order}</th>
       <td>${row.giveawayOrder}</td>
@@ -613,6 +628,34 @@ const bindGuildSelect = async () => {
     await renderBlackList()
   })
 }
+
+const bindResultSortButton = async () => {
+  const resultOrderFunctions = [
+    {
+      name: 'Giveaway',
+      id: 'giveaway',
+      fn: giveawayOrderResultSortOrder
+    },
+    {
+      name: 'User',
+      id: 'user',
+      fn: userResultSortOrder
+    }
+  ]
+
+  let currentSortOrder = 0
+  const resultOrderSpan = document.querySelector('#sort-order')
+  document.querySelector('#result-sort-order').addEventListener('click', async () => {
+    console.log('Hello from resultOrder onClick! Old sort order:', currentSortOrder)
+    currentSortOrder = ++currentSortOrder % resultOrderFunctions.length
+
+    resultOrderFn = resultOrderFunctions[currentSortOrder].fn
+    resultOrderSpan.textContent = resultOrderFunctions[currentSortOrder].name
+    resultOrderSpan.setAttribute('data-order', resultOrderFunctions[currentSortOrder].id)
+    await renderResult()
+  })
+}
+
 const saveResult = () => {
   window.localStorage.setItem('givemeisk-result', JSON.stringify(persistedResult))
 }
@@ -697,6 +740,7 @@ const init = async () => {
   bindPrizes()
   bindClearResults()
   bindRestartButton()
+  bindResultSortButton()
 }
 const persistedData = loadData()
 let persistedResult = loadResult()
