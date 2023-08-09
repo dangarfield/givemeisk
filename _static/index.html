@@ -6,6 +6,11 @@
     <title>Give Me ISK</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+
     <style>
         .grid-2 {
             display: grid;
@@ -42,8 +47,11 @@
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">Give Me ISK!</a>
-                <div class="collapse navbar-collapse">
+            <a class="navbar-brand" href="/">
+                <img src="/isk.png" alt="Bootstrap" width="26" height="26">
+                Give Me ISK!
+            </a>
+            <div class="collapse navbar-collapse">
                 <span class="navbar-text">
                     Configure your giveaway
                 </span>
@@ -73,7 +81,6 @@
                     <label for="channel">Channel</label>
                 </div>
 
-
                 <div class="dropdown w-100 blacklist-dropdown mb-3">
                     <button class="btn btn-outline-secondary dropdown-toggle w-100 mb-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
                         Select members to blacklist
@@ -100,6 +107,10 @@
                     <input class="form-check-input dry-run" type="checkbox" role="switch" id="dry-run" checked>
                     <label class="form-check-label" for="dry-run">Dry Run <i>(No msg to discord)</i></label>
                 </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input black-to-white" type="checkbox" role="switch" id="black-to-white">
+                    <label class="form-check-label" for="black-to-white">Make blacklist a whitelist</label>
+                </div>
                 <div class="mb-3 w-100">
                     <button type="button" class="btn btn-outline-primary start w-100" disabled>Select bot key before start</button>
                 </div>
@@ -124,22 +135,29 @@
                 </ul>
                 <div class="stretch">
                     <div class="tab h-100 border p-3" data-tab="instructions">
+                        <h3>Give Me ISK</h3>
+                        <p class="lead">
+                            Discord Bot to create and run a giveaway on discord - Members and prizes are allocated automatically. No install required! Winners are PM'd with a link to claim their prize and associate their EVE Online accounts. An admin page exists for you to quickly see what contracts you have left to fulfil
+                        </p>
+                        
                         <h3>Setup Bot</h3>
-                        <p>TODO - I will fill this out later, but basically you need a discord bot key with the permissions to view your guild, channel, members and post messages. Add this bot to your guild.</p>
+                        <p class="lead">I will fill this out later, but basically you need a discord bot key with the permissions to view your guild, channel, members and post messages. Add this bot to your guild.</p>
 
                         <h3>Giveaway Setup</h3>
-                        <p>After your've put your discord key in, select your guild and channel</p>
-                        <p>All changes are saved to your browser automatically. No data is sent to anywhere except discord APIs</p>
-                        <p>Blacklist any members</p>
-                        <p>You can execute a DRY RUN without sending any messages to discord, it'll be quicker</p>
-                        <p>Conversely, if you don't see anything on discord, check for this!</p>
-                        <p>Add messages for before and after your giveaway with COUNTDOWN and COUNTAFTER</p>
-                        <p>Copy and paste your spreadsheet into the prizes column</p>
-                        <p>Once finished, you can view the results</p>
-                        <p>IMPORTANT: This runs in your browser, if you get disconnected, refresh the page and you can start from where you last sent messages</p>
-                        <p>Source code available: <a href="https://github.com/dangarfield/givemeisk">github.com/dangarfield/givemeisk</a></p>
-
-                        <p>I will make this instruction page prettier...</p>
+                        <ul>
+                            <li>After your've put your discord key in, select your guild and channel</li>
+                            <li>All changes are saved to your browser automatically. No data is sent to anywhere except discord APIs</li>
+                            <li>Blacklist any members</li>
+                            <li>You can execute a DRY RUN without sending any messages to discord, it'll be quicker</li>
+                            <li>Conversely, if you don't see anything on discord, check for this!</li>
+                            <li>Add messages for before and after your giveaway with COUNTDOWN and COUNTAFTER</li>
+                            <li>Copy and paste your spreadsheet into the prizes column</li>
+                            <li>IMPORTANT: This runs in your browser, if you get disconnected, refresh the page and you can start from where you last sent messages</li>
+                            <li>Once finished, you can view the results. Members will be PMd with a link to associate their EVE and Discord accounts</li>
+                            <li>The admin link will show you the status of all of your giveaway - itemised with EVE Online Name, Discord Name and a flag that you can set to mark it as fulfilled</li>
+                            <li>Source code available: <a href="https://github.com/dangarfield/givemeisk">github.com/dangarfield/givemeisk</a></li>
+                        </ul>
+                        
                     </div>
                     <div class="tab h-100 border p-3" data-tab="countdown" style="display: none;">
                         <div class="grid-2 column-gap-3">
@@ -199,7 +217,8 @@
                             <div class="alert alert-info grid-info">
                                 <b>DO NOT REFRESH YOUR BROWSER!</b><br/>
                                 Results will be displayed as the giveaway progresses. If anything went wrong, you can restart the giveaway from the last message.
-                                You can clear the results if you want to start again
+                                You can clear the results if you want to start again<br/>
+                                <b>BEFORE RUNNING A GIVEAWAY - TAKE CARE TO BOOKMARK THE ADMIN LINK</b>
                             </div>
 
                             <div class="form-floating grid-pasteinput">
@@ -210,8 +229,9 @@
                                 <button class="btn btn-outline-primary results-restart mb-1" disabled>Select bot key before restart from last message</button>
                                 <button class="btn btn-outline-primary results-clear mb-1">Clear results</button>
                                 <button class="btn btn-outline-primary mb-1" id="result-sort-order">
-                                    Sort: <span id="sort-order" data-order="default">Default</span>
+                                    Sort: <span id="sort-order" data-order="giveaway">Giveaway</span>
                                 </button>
+                                <a class="btn btn-outline-primary mb-1 giveaway-admin-link" href="/admin?id=" target="_blank" disabled>Open giveaway admin</a>
                                 <span class="result-progress"></span>
                             </div>
                             <div class="grid-output d-flex">

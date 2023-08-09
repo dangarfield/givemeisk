@@ -1,4 +1,5 @@
-// const BASE_URL = 'https://discord.com/api/v10'
+import { nanoid } from 'nanoid'
+
 const BASE_URL = '/api/v10'
 
 const executeFetchGet = async (path, params) => {
@@ -14,8 +15,6 @@ const executeFetchGet = async (path, params) => {
   return res
 }
 
-// TODO - disable dry run once running (might as well disabled all inputs)
-
 const executeFetchPost = async (path, body) => {
   const url = `${path}`
   const req = await fetch(url, {
@@ -23,7 +22,7 @@ const executeFetchPost = async (path, body) => {
     headers: {
       Accept: 'application/json',
       Authorization: `Bot ${persistedData.discordKey}`,
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/json'
     },
     body
   })
@@ -36,33 +35,81 @@ const executeFetchPost = async (path, body) => {
 // ADD YOUR OWN ONE AND REGISTER IT IN bindResultSortButton for it to work!
 
 // Don't change the order at all
-const defaultResultSortOrder = (a, b) => {
-  return 0;
+const giveawayOrderResultSortOrder = (a, b) => {
+  return a.giveawayOrder - b.giveawayOrder
 }
 
 // This sorts by id for now, maybe change to alphabetical later
 const userResultSortOrder = (a, b) => {
-  return a.winnerDiscordId - b.winnerDiscordId;
+  return a.winnerDiscordName.localeCompare(b.winnerDiscordName)
 }
 
 let members
-let resultOrderFn = defaultResultSortOrder
+let resultOrderFn = giveawayOrderResultSortOrder
 const sleep = (s) => {
   return new Promise(resolve => setTimeout(resolve, s * 1000))
 }
 
-const sendMessage = async (isDryRun, logEle, msg) => {
-  if (isDryRun) {
-    // msg = msg.replace(/<@(\w+)>/g, (match, captureGroup) => captureGroup)
+const sendMessage = async (isDryRun, logEle, task) => {
+  console.log('sendMessage', task)
+  const paramsBody = {}
+  let pm
+  if (!task.prizeMessage) {
+    paramsBody.content = task.msg
+    console.log('sendMessage - simple', isDryRun, task.msg)
+    logEle.textContent = task.msg
   } else {
-    // msg = msg.replace(/<@(\w+)>/g, (match, captureGroup) => captureGroup) // TEMPORARY
-    const params = new window.URLSearchParams()
-    params.append('content', msg)
-    const messageRes = (await executeFetchPost(`${BASE_URL}/channels/${persistedData.channel.id}/messages`, params.toString()))// .map(m => { return { id: m.user.id, name: m.user.globalName || m.user.username, blacklisted: false } })
-    console.log('messageRes', messageRes)
+    const prizeTitle = task.perPrize > 1 ? `${task.perPrize}x ${task.prizeName}` : task.prizeName
+    pm = {
+      recipient: task.winnerDiscordId,
+      body: {
+        content: `Hey \`${task.winnerDiscordName}\`, you won! \`${prizeTitle}\`. [Click here to claim](${window.location.origin}/claims?id=${task.giveawayItemId})`
+      }
+    }
+    let msg = task.prizeMessage
+    if (window.location.href.includes('localhost')) {
+      msg = task.prizeMessage.replace(/<@(\w+)>/g, (match, captureGroup) => captureGroup) // TEMPORARY to supress notifications from dev
+      pm.recipient = '1136201410388709469'
+    }
+
+    const embed = {
+      title: prizeTitle,
+      description: msg,
+      color: 0xFAD02C,
+      thumbnail: {
+        url: 'https://i.ibb.co/47rkmSp/favicon-32x32.png' // TODO - Update with netlify / github cdn version of favicon-32x32.png
+      },
+      footer: {
+        text: 'To claim prizes: Check your PM!'
+      }
+    }
+    if (task.sponsorMessage) {
+      embed.fields = [
+        {
+          name: 'Sponsored by',
+          value: task.sponsorMessage
+        }
+      ]
+    }
+    paramsBody.embeds = [embed]
+    console.log('sendMessage - embed', isDryRun, msg)
+    logEle.textContent = msg
   }
-  console.log('sendMessage', isDryRun, msg)
-  logEle.textContent = msg
+  console.log('paramsBody', paramsBody, pm)
+
+  if (!isDryRun) {
+    const messageRes = await executeFetchPost(`${BASE_URL}/channels/${persistedData.channel.id}/messages`, JSON.stringify(paramsBody))
+    console.log('pmRes', messageRes)
+    if (pm !== undefined) {
+      const pmChannelRes = await executeFetchPost(`${BASE_URL}/users/@me/channels`, JSON.stringify({ recipient_id: pm.recipient }))
+      console.log('pmChannelRes', pmChannelRes)
+      // Note, this can be blocked - and it has...
+      if (pmChannelRes.id) {
+        const pmRes = await executeFetchPost(`${BASE_URL}/channels/${pmChannelRes.id}/messages`, JSON.stringify(pm.body))
+        console.log('pmRes', pmRes)
+      }
+    }
+  }
 }
 const processTaskList = async (allTasks) => {
   const isDryRun = document.querySelector('.dry-run').checked
@@ -73,9 +120,11 @@ const processTaskList = async (allTasks) => {
     if (isDryRun) {
       await sleep(1)
     } else {
-      await sleep(task.delay)
+      let delay = task.delay
+      if (delay === undefined) delay = persistedData.giveawayGap
+      await sleep(delay)
     }
-    await sendMessage(isDryRun, logEle, task.msg)
+    await sendMessage(isDryRun, logEle, task)
     if (task.giveawayOrder) {
       const r = persistedResult.find(r => r.giveawayOrder === task.giveawayOrder)
       r.msgSent = true
@@ -98,6 +147,7 @@ const disableInputs = () => {
   }
   document.querySelector('.giveaway-gap').setAttribute('disabled', 'disabled')
   document.querySelector('.dry-run').setAttribute('disabled', 'disabled')
+  document.querySelector('.black-to-white').setAttribute('disabled', 'disabled')
   document.querySelector('.start').setAttribute('disabled', 'disabled')
 }
 const executeRestart = async () => {
@@ -105,11 +155,28 @@ const executeRestart = async () => {
   const countafter = await validateCountafter(persistedData.countafter)
   console.log('executeGiveaway', persistedResult, countafter)
   const allTasks = [
-    ...persistedResult.filter(r => !r.msgSent).map(r => { return { msg: r.prizeMessage, delay: persistedData.giveawayGap, giveawayOrder: r.giveawayOrder } }),
+    ...persistedResult.filter(r => !r.msgSent), // .map(r => { return { msg: r.prizeMessage, delay: persistedData.giveawayGap, giveawayOrder: r.giveawayOrder } }),
     ...countafter.map(c => { return { msg: c, delay: 1 } })]
   console.log('restartTasks', allTasks)
   allTasks[0].delay = 1
   await processTaskList(allTasks)
+}
+const saveGiveawayClaims = async () => {
+  const giveawayId = nanoid(10)
+  persistedData.giveawayId = giveawayId
+  if (persistedData.historicGiveaways === undefined) persistedData.historicGiveaways = []
+  persistedData.historicGiveaways.push(persistedData.giveawayId)
+  saveData()
+  document.querySelector('.giveaway-admin-link').setAttribute('href', `/admin?id=${giveawayId}`)
+  // const prizeTitle =
+  const claims = persistedResult.map(r => { return { itemId: r.giveawayItemId, giveawayId, discordId: r.winnerDiscordId, discordName: r.winnerDiscordName, prize: r.perPrize > 1 ? `${r.perPrize}x ${r.prizeName}` : r.prizeName, eveId: false, eveName: false, contractSent: false } })
+  console.log('saveGiveawayClaims', giveawayId, persistedResult, claims)
+
+  const isDryRun = document.querySelector('.dry-run').checked
+  if (!isDryRun) {
+    const saveRes = await executeFetchPost(`/giveaways/${giveawayId}`, JSON.stringify(claims))
+    console.log('saveRes', saveRes)
+  }
 }
 const executeGiveaway = async () => {
   disableInputs()
@@ -118,12 +185,13 @@ const executeGiveaway = async () => {
   console.log('executeGiveaway', countdown, persistedResult, countafter)
   const allTasks = [
     ...countdown.map(c => { return { msg: c, delay: 1 } }),
-    ...persistedResult.map(r => { return { msg: r.prizeMessage, delay: persistedData.giveawayGap, giveawayOrder: r.giveawayOrder } }),
+    ...persistedResult, // .map(r => { return { msg: r.prizeMessage, delay: persistedData.giveawayGap, giveawayOrder: r.giveawayOrder } }),
     ...countafter.map(c => { return { msg: c, delay: 1 } })]
 
   allTasks[0].delay = 1
   allTasks.find(r => r.giveawayOrder === 1).delay = 1
   console.log('allTasks', allTasks)
+  await saveGiveawayClaims()
   await processTaskList(allTasks)
 }
 const bindClearResults = async () => {
@@ -150,7 +218,7 @@ const renderResult = () => {
         <th scope="col">Message Sent</th>
       </tr>
     </thead>`
-  html += persistedResult.sort((a, b) => {return resultOrderFn(a, b)}).map(row => `
+  html += persistedResult.sort((a, b) => { return resultOrderFn(a, b) }).map(row => `
     <tr${row.msgSent ? ' class="table-success"' : ''}>
       <th scope="row">${row.order}</th>
       <td>${row.giveawayOrder}</td>
@@ -176,9 +244,9 @@ const renderResult = () => {
   }
 }
 const getWinner = () => {
-  // TODO - Update this from API each time
-  const potentialWinners = members.filter(m => !m.blacklisted)
-  // const potentialWinners = members.filter(m => m.blacklisted) // OPPOSITE, THIS IS WHITELIST FOR TESTING
+  // TODO - Update this from API each time to get new members
+  const useWhitelist = document.querySelector('.black-to-white').checked
+  const potentialWinners = members.filter(m => useWhitelist === m.blacklisted)
   const randomIndex = Math.floor(Math.random() * potentialWinners.length)
   return potentialWinners[randomIndex]
 }
@@ -207,16 +275,11 @@ const calculateAndPresentResults = async () => {
   for (const line of prizeList) {
     for (let i = 0; i < line.noPrizes; i += line.perPrize) {
       let prizeMessage = line.prizeMessage ? line.prizeMessage : persistedData.defaultPrizeMessage
-      // TODO - Replace these with sponsor messages too and update @user and @prize, no... do this later after prize allocation
       const winner = getWinner()
       prizeMessage = prizeMessage.replace(/@user/g, `<@${winner.id}>`)
       prizeMessage = prizeMessage.replace(/@prize/g, line.perPrize > 1 ? `${line.perPrize}x ${line.prizeName}` : line.prizeName)
-      // prizeMessage = prizeMessage.replace(/@prize/g, `<@${winner.id}>`)
-      if (line.sponsorMessage) prizeMessage = `${prizeMessage} ${line.sponsorMessage}`
-
       console.log('winner', winner)
-      // TODO - Lookup the members each time
-      giveawayList.push({ order: i + 1, giveawayOrder: Math.random(), prizeName: line.prizeName, perPrize: line.perPrize, prizeMessage, winnerDiscordId: winner.id, winnerDiscordName: winner.name, msgSent: false })
+      giveawayList.push({ order: i + 1, giveawayOrder: Math.random(), prizeName: line.prizeName, perPrize: line.perPrize, prizeMessage, sponsorMessage: line.sponsorMessage, winnerDiscordId: winner.id, winnerDiscordName: winner.name, giveawayItemId: nanoid(10), msgSent: false })
     }
   }
   giveawayList.sort((a, b) => a.giveawayOrder - b.giveawayOrder)
@@ -418,7 +481,7 @@ const bindNavTabs = async () => {
 }
 const validateCountdown = async (value) => {
   const ele = document.querySelector('.tab[data-tab="countdown"] .grid-validation')
-  const lines = value.split('\n').filter(l => l !== '')
+  const lines = value.split('\n').filter(l => l !== '').map(v => '```arm\n' + v + '\n```')
   const isValid = lines.length > 0
   // console.log('validateCountdown', value, lines, isValid)
   if (!isValid) {
@@ -437,7 +500,7 @@ const validateCountdown = async (value) => {
 }
 const validateCountafter = async (value) => {
   const ele = document.querySelector('.tab[data-tab="countafter"] .grid-validation')
-  const lines = value.split('\n').filter(l => l !== '')
+  const lines = value.split('\n').filter(l => l !== '').map(v => '```arm\n' + v + '\n```')
   const isValid = lines.length > 0
   // console.log('validateCountdown', value, lines, isValid)
   if (!isValid) {
@@ -513,7 +576,6 @@ const convertToInt = (inputString) => {
 const validatePrizes = (prizes) => {
   // console.log('validatePrizes', prizes)
   const rows = prizes.split('\n').map(r => r.split('\t'))
-  // .slice(0, 10) // TODO - For testing, remove after
 
   // console.log('rows', rows)
   const prizeList = []
@@ -632,28 +694,28 @@ const bindGuildSelect = async () => {
 const bindResultSortButton = async () => {
   const resultOrderFunctions = [
     {
-      name: "Default",
-      id: "default",
-      fn: defaultResultSortOrder
+      name: 'Giveaway',
+      id: 'giveaway',
+      fn: giveawayOrderResultSortOrder
     },
     {
-      name: "User",
-      id: "user",
+      name: 'User',
+      id: 'user',
       fn: userResultSortOrder
     }
-  ];
-  
-  let currentSortOrder = 0;
-  let resultOrderSpan = document.querySelector("#sort-order");
-  document.querySelector("#result-sort-order").addEventListener("click", async () => {
-    console.log("Hello from resultOrder onClick! Old sort order:", currentSortOrder);
-    currentSortOrder = ++currentSortOrder % resultOrderFunctions.length;
-    
-    resultOrderFn = resultOrderFunctions[currentSortOrder].fn;
-    resultOrderSpan.textContent = resultOrderFunctions[currentSortOrder].name;
-    resultOrderSpan.setAttribute("data-order", resultOrderFunctions[currentSortOrder].id);
-    await renderResult();
-  });
+  ]
+
+  let currentSortOrder = 0
+  const resultOrderSpan = document.querySelector('#sort-order')
+  document.querySelector('#result-sort-order').addEventListener('click', async () => {
+    console.log('Hello from resultOrder onClick! Old sort order:', currentSortOrder)
+    currentSortOrder = ++currentSortOrder % resultOrderFunctions.length
+
+    resultOrderFn = resultOrderFunctions[currentSortOrder].fn
+    resultOrderSpan.textContent = resultOrderFunctions[currentSortOrder].name
+    resultOrderSpan.setAttribute('data-order', resultOrderFunctions[currentSortOrder].id)
+    await renderResult()
+  })
 }
 
 const saveResult = () => {
@@ -705,6 +767,7 @@ const updateStateFromData = () => {
     document.querySelector('.prizes').value = d.prizes
     validatePrizes(d.prizes)
   }
+  if (d.giveawayId) document.querySelector('.giveaway-admin-link').setAttribute('href', `/admin?id=${d.giveawayId}`)
 
   if (persistedResult.length > 0) {
     document.querySelector('.nav-link[data-tab="results"]').removeAttribute('disabled')
@@ -723,7 +786,15 @@ const stretchDiv = () => {
   const adjustedHeight = windowHeight - navbarHeight - parseInt(marginTop) - parseInt(marginBottom) - navtabHeight - 10 + 'px'
   document.querySelector('.stretch').style.height = adjustedHeight
 }
-
+const bindBlackToWhite = () => {
+  document.querySelector('.black-to-white').addEventListener('change', function () {
+    if (this.checked) {
+      document.querySelector('.blacklist-dropdown .dropdown-toggle').textContent = 'Select members to whitelist'
+    } else {
+      document.querySelector('.blacklist-dropdown .dropdown-toggle').textContent = 'Select members to blacklist'
+    }
+  })
+}
 const init = async () => {
   console.log('init', persistedData, persistedResult)
   window.addEventListener('resize', () => stretchDiv())
@@ -741,6 +812,7 @@ const init = async () => {
   bindClearResults()
   bindRestartButton()
   bindResultSortButton()
+  bindBlackToWhite()
 }
 const persistedData = loadData()
 let persistedResult = loadResult()

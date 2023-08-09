@@ -4,3 +4,4 @@
 *.csv
 *.txt
 node_modules
+.env.local
