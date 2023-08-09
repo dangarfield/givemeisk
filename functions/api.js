@@ -12,12 +12,10 @@ export async function handler (event, context) {
     }
   }
   if (event.body) {
-    const params = new URLSearchParams()
-    params.append('content', 'Text message')
-    options.body = params.toString()
     // options.body = new URLSearchParams(event.body).toString()
     options.body = event.body
-    options.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+    // options.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+    options.headers['Content-Type'] = 'application/json'
   }
   console.log('proxy', url, options)
   const req = await fetch(url, options)
