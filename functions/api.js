@@ -1,5 +1,5 @@
 export async function handler (event, context) {
-  console.log('boom', event, context)
+  console.log('api', event, context)
   const method = event.httpMethod
   const url = `https://discord.com${event.path}${event.rawQuery.length > 0 ? `?${event.rawQuery}` : ''}`
   const auth = event.headers.authorization
