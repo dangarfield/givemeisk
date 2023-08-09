@@ -103,8 +103,11 @@ const sendMessage = async (isDryRun, logEle, task) => {
     if (pm !== undefined) {
       const pmChannelRes = await executeFetchPost(`${BASE_URL}/users/@me/channels`, JSON.stringify({ recipient_id: pm.recipient }))
       console.log('pmChannelRes', pmChannelRes)
-      const pmRes = await executeFetchPost(`${BASE_URL}/channels/${pmChannelRes.id}/messages`, JSON.stringify(pm.body))
-      console.log('pmRes', pmRes)
+      // Note, this can be blocked - and it has...
+      if (pmChannelRes.id) {
+        const pmRes = await executeFetchPost(`${BASE_URL}/channels/${pmChannelRes.id}/messages`, JSON.stringify(pm.body))
+        console.log('pmRes', pmRes)
+      }
     }
   }
 }
@@ -117,7 +120,9 @@ const processTaskList = async (allTasks) => {
     if (isDryRun) {
       await sleep(1)
     } else {
-      await sleep(task.delay)
+      let delay = task.delay
+      if (delay === undefined) delay = persistedData.giveawayGap
+      await sleep(delay)
     }
     await sendMessage(isDryRun, logEle, task)
     if (task.giveawayOrder) {
