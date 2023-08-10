@@ -30,8 +30,14 @@ const displayClaims = (giveawayId, claims) => {
   console.log('data', data)
   grid = new window.gridjs.Grid({
     columns: [
-      { name: 'ID', hidden: true },
-      { name: 'Prize', sort: true },
+      { name: 'Index', hidden: true },
+      {
+        name: 'Prize',
+        sort: true,
+        formatter: (cell, row) => {
+          return window.gridjs.html(`<a href="/claims/?id=${row.cells[6].data}" target="_blank">${row.cells[1].data}</a>`)
+        }
+      },
       { name: 'Discord', sort: true },
       { name: 'EVE', sort: true },
       { name: 'Contract Sent', sort: true },
@@ -52,7 +58,8 @@ const displayClaims = (giveawayId, claims) => {
           }, actionName)
         }
 
-      }],
+      },
+      { name: 'ItemID', hidden: true }],
     data,
     fixedHeader: true,
     search: true
