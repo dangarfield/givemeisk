@@ -50,47 +50,6 @@ const sleep = (s) => {
   return new Promise(resolve => setTimeout(resolve, s * 1000))
 }
 
-// COUNTDOWN/COUNTAFTER SYSTEM
-
-// TEMPLATE:
-/* const messageTemplate = {
-  isEmbed: boolean,
-  embed: null | undefined | embedData,
-  messageContent: string,
-  prizeMessage: boolean,
-}
-
-EXAMPLE COUNTDOWN INPUT:
-
-Objects are treated as embeds unless they contain a variations field
-
-[
-  "Initiating boot sequence",
-  {
-    "pick": 10,
-    "allowDuplicates": false,
-    "variations": [
-      [
-        "Initializing system",
-        {
-          "title": "System Status",
-          "content": "All systems offline"
-        },
-        [
-          "3",
-          "2",
-          "1",
-          "0"
-        ],
-        ...
-      ]
-    ]
-  },
-  "Boot completed"
-]
-*/
-
-
 const sendMessage = async (isDryRun, logEle, task) => {
   console.log('sendMessage', task)
   const paramsBody = {}
@@ -649,7 +608,7 @@ const validateCountafter = async (value) => {
     ele.textContent = error;
     return false;
   }
-  
+
   if (!Array.isArray(parsedVal)) {
     ele.classList.remove('alert-light')
     ele.classList.remove('alert-success')
