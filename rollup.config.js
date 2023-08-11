@@ -45,4 +45,17 @@ export default [{
     // !production && livereload({ watch: '_static' }),
     commonjs()
   ]
+}, {
+  input: 'src/super-admin.js',
+  output: {
+    file: '_static/super-admin.min.js',
+    format: 'cjs'
+  },
+  plugins: [
+    nodeResolve({ browser: true }),
+    json(),
+    // !production && serve({ open: true, contentBase: '_static', port: 3000 }),
+    // !production && livereload({ watch: '_static' }),
+    commonjs()
+  ]
 }]

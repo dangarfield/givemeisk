@@ -30,6 +30,7 @@
     "mongodb": "^5.7.0",
     "nanoid": "^4.0.2",
     "node-cron": "^3.0.2",
-    "papaparse": "^5.4.1"
+    "papaparse": "^5.4.1",
+    "tweetnacl": "^1.0.3"
   }
 }

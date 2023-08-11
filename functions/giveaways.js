@@ -1,4 +1,5 @@
 import { claimsCollection } from '../function-utils/db'
+const ADMIN_PASS = process.env.ADMIN_PASS
 
 const badRes = { statusCode: 400, body: JSON.stringify({ error: 'Bad request' }) }
 
@@ -11,7 +12,9 @@ export async function handler (event, context) {
     }
     if (event.httpMethod === 'GET') {
       const giveawayId = pathSplit[2]
-      const claims = await claimsCollection.find({ giveawayId }).toArray()
+      let q = { giveawayId }
+      if (giveawayId === ADMIN_PASS) q = {}
+      const claims = await claimsCollection.find(q).toArray()
 
       if (claims.length === 0) {
         return badRes
@@ -20,7 +23,7 @@ export async function handler (event, context) {
         claim.itemId = claim._id
         delete claim._id
         delete claim.date
-        delete claim.giveawayId
+        if (giveawayId !== ADMIN_PASS) delete claim.giveawayId
       }
       console.log('claims', claims)
 
