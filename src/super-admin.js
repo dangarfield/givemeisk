@@ -223,6 +223,24 @@ const updateClaimsWithContractSent = async (claimIds, contractSent) => {
   }
   window.alert('OK, saved. Go ahead!')
 }
+const getAllClaims = async (giveawayId) => {
+  const claims = []
+  let gotAllData = false
+  let page = 0
+  do {
+    const claimsReq = await fetch(`/giveaways/${giveawayId}?page=${page}`)
+    const claimsRes = await claimsReq.json()
+    console.log('claimsRes', page, claimsRes.length)
+    claims.push(...claimsRes)
+    page = page + 1
+    console.log('updated page', page, claimsRes.length, claims.length)
+    if (claimsRes.length < 30000) {
+      console.log('got all data', page, claimsRes.length, claims.length)
+      gotAllData = true
+    }
+  } while (!gotAllData)
+  return claims
+}
 const init = async () => {
   console.log('super-admin')
   try {
@@ -231,9 +249,8 @@ const init = async () => {
       return displayInvalid()
     }
     const giveawayId = queryParams.get('password')
-    const claimsReq = await fetch(`/giveaways/${giveawayId}`)
-    const claimsRes = await claimsReq.json()
-    console.log('claimsRes', claimsRes)
+
+    const claims = await getAllClaims(giveawayId)
 
     let giveawayIdsToRemove = []
     if (queryParams.has('ignore')) {
@@ -244,7 +261,7 @@ const init = async () => {
       giveawayIdsToUse = queryParams.get('only').split(',')
     }
     console.log('giveawayIdsToRemove / use', giveawayIdsToRemove, giveawayIdsToUse)
-    displayClaims(giveawayId, claimsRes, giveawayIdsToRemove, giveawayIdsToUse)
+    displayClaims(giveawayId, claims, giveawayIdsToRemove, giveawayIdsToUse)
   } catch (error) {
     console.error(error)
     return displayError()

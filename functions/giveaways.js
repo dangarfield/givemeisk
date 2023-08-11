@@ -6,7 +6,7 @@ const badRes = { statusCode: 400, body: JSON.stringify({ error: 'Bad request' })
 export async function handler (event, context) {
   try {
     const pathSplit = event.path.split('/')
-    console.log('giveaways', event, pathSplit)
+    console.log('giveaways', event, pathSplit, event.queryStringParameters)
     if (pathSplit.length !== 3) {
       return badRes
     }
@@ -14,8 +14,12 @@ export async function handler (event, context) {
       const giveawayId = pathSplit[2]
       let q = { giveawayId }
       if (giveawayId === ADMIN_PASS) q = {}
-      const claims = await claimsCollection.find(q).toArray()
+      const page = parseInt(event.queryStringParameters.page)
+      console.log('q', q, page)
 
+      const claims = await claimsCollection.find(q, { limit: 30000, skip: page * 30000 }).toArray()
+
+      console.log('claims', claims)
       if (claims.length === 0) {
         return badRes
       }
