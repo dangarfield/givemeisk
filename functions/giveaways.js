@@ -17,7 +17,7 @@ export async function handler (event, context) {
       const page = parseInt(event.queryStringParameters.page)
       console.log('q', q, page)
 
-      const claims = await claimsCollection.find(q, { limit: 30000, skip: page * 30000 }).toArray()
+      const claims = await claimsCollection.find(q, { limit: 10000, skip: page * 10000 }).toArray()
 
       console.log('claims', claims)
       if (claims.length === 0) {

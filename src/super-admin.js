@@ -234,7 +234,7 @@ const getAllClaims = async (giveawayId) => {
     claims.push(...claimsRes)
     page = page + 1
     console.log('updated page', page, claimsRes.length, claims.length)
-    if (claimsRes.length < 30000) {
+    if (claimsRes.length < 10000) {
       console.log('got all data', page, claimsRes.length, claims.length)
       gotAllData = true
     }
