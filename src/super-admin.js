@@ -82,10 +82,10 @@ const displayClaims = (giveawayId, claims, giveawayIdsToRemove, giveawayIdsToUse
                   <li>If you have <code>only</code> it will not ignore any <code>ignore</code>'s if they are present in the url</li>
                 </ul>
                 ${giveawayIdsToUse.length > 0
-                  ? `<p class="lead">Only showing giveaways: ${giveawayIdsToUse.map(g => `<code>${g}</code>`).join('')}</p>`
+                  ? `<p class="lead">Only showing giveaways: ${giveawayIdsToUse.map(g => `<code>${g}</code>`).join(' ')}</p>`
                   : ''}
                 ${(giveawayIdsToUse.length === 0 && giveawayIdsToRemove.length > 0)
-                  ? `<p class="lead">NOT showing giveaways: ${giveawayIdsToRemove.map(g => `<code>${g}</code>`).join('')}</p>`
+                  ? `<p class="lead">NOT showing giveaways: ${giveawayIdsToRemove.map(g => `<code>${g}</code>`).join(' ')}</p>`
                   : ''}
                 ${(giveawayIdsToUse.length === 0 && giveawayIdsToRemove.length === 0)
                   ? '<p class="lead">Showing ALL giveaways</p>'
@@ -149,8 +149,15 @@ const displayClaims = (giveawayId, claims, giveawayIdsToRemove, giveawayIdsToUse
             name.slice(0, 30)
             name = name + '... (shortened)'
           }
-          return window.gridjs.html(`<p>${name}</p>`)
+          return window.gridjs.h('button', {
+            className: `btn btn-secondary w-100${name.length === 0 ? ' d-none' : ''}`,
+            onClick: function () {
+              console.log('click eve', name, name.length)
+              navigator.clipboard.writeText(name)
+            }
+          }, name)
         }
+
       },
       {
         name: 'Prize',
@@ -209,7 +216,8 @@ const displayClaims = (giveawayId, claims, giveawayIdsToRemove, giveawayIdsToUse
 
     data,
     fixedHeader: false,
-    search: true
+    search: true,
+    resizable: true
 
   }).render(document.querySelector('.table-holder'))
 }
