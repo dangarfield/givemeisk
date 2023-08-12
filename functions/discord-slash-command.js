@@ -32,12 +32,12 @@ const verifySignature = (event) => {
   const timestamp = event.headers['x-signature-timestamp']
   const body = event.body // rawBody is expected to be a string, not raw bytes
 
-  // console.log('nacl', PUBLIC_KEY, signature, timestamp, body)
   const isVerified = nacl.sign.detached.verify(
     Buffer.from(timestamp + body),
     Buffer.from(signature, 'hex'),
     Buffer.from(PUBLIC_KEY, 'hex')
   )
+  console.log('nacl', PUBLIC_KEY, signature, timestamp, body, isVerified)
   if (!isVerified) {
     console.log('INVALID signature')
     return false
@@ -83,10 +83,10 @@ const handleGiveMeIsk = async (payload) => {
     })
   }
 
-  let showLink = false
-  let eveSignUpText = `\n\nYou will need to send us your EVE contact details, click https://givemeisk.netlify.app/claims?id=${claims[0]._id} to claim your prizes!`
-  if (claims[0].eveId === false) {
-    showLink = true
+  let showLink = true
+  let eveSignUpText = '\n\nYou will need to send us your EVE contact details, click the button to claim your prizes!'
+  if (claims[0].eveId !== false) {
+    showLink = false
     eveSignUpText = `\n\nWe can see that you've linked you EVE details \`${claims[0].eveName}\`! We'll soon see you in game, wait patiently for your contracts and an EVE mail!`
   }
   let prizeText = `Nice, you've won! For now, we'll going to tell you that you've got \`${claims[0].prize}\` but the giveaway hasn't finished yet! Keep an eye out! There are more giveaways to win!`
@@ -131,7 +131,10 @@ export async function handler (event, context) {
   const payload = JSON.parse(event.body)
   console.log('payload', payload)
 
-  if (isPing(payload)) return { statusCode: 200, body: JSON.stringify({ type: 1 }), headers: { 'Content-Type': 'application/json' } }
+  if (isPing(payload)) {
+    console.log('PING')
+    return { statusCode: 200, body: JSON.stringify({ type: 1 }), headers: { 'Content-Type': 'application/json' } }
+  }
 
   if (isCommand(payload, 'givemeisk')) {
     return await handleGiveMeIsk(payload)
