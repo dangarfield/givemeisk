@@ -11,5 +11,6 @@ const client = new MongoClient(process.env.MONGO_URI, {
 const db = client.db('givemeisk')
 
 export const claimsCollection = db.collection('claims')
+export const giveawayGroupCollection = db.collection('giveaway-group')
 
 // TODO - Ensure indexes
