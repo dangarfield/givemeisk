@@ -105,7 +105,7 @@ const handleGiveMeIsk = async (payload) => {
     })
   }
 
-  const { completeCount, totalCount, percent } = getProgressStats(giveawayGroup)
+  const { completeCount, totalCount, percent } = await getProgressStats(giveawayGroup)
   const progressText = `\n\nIssuing contracts is time consuming! We're ${percent}% through issuing the ${totalCount} contracts for this giveaway! That's ${completeCount} complete and counting!`
 
   let showLink = true
