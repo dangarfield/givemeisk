@@ -50,6 +50,28 @@ const isPing = (payload) => {
   }
   return false
 }
+const getProgressStats = async (giveawayGroup) => {
+  const claims = await claimsCollection.aggregate([
+    {
+      $match: {
+        giveawayId: { $in: giveawayGroup.giveaways }
+      }
+    },
+    {
+      $group: {
+        _id: '$contractSent',
+        count: { $sum: 1 }
+      }
+    }
+  ]).toArray()
+  const completeCount = claims.find(c => c._id === true).count
+  const falseCount = claims.find(c => c._id === false).count
+  const totalCount = completeCount + falseCount
+  const percent = Math.round(100 * (completeCount / totalCount))
+  return {
+    completeCount, totalCount, percent
+  }
+}
 const handleGiveMeIsk = async (payload) => {
   const userId = payload.member.user.id
   //   let username = payload.member.user.username
@@ -83,6 +105,9 @@ const handleGiveMeIsk = async (payload) => {
     })
   }
 
+  const { completeCount, totalCount, percent } = getProgressStats(giveawayGroup)
+  const progressText = `\n\nIssuing contracts is time consuming! We're ${percent}% through issuing the ${totalCount} contracts for this giveaway! That's ${completeCount} complete and counting!`
+
   let showLink = true
   let eveSignUpText = '\n\nYou will need to send us your EVE contact details, click the button to claim your prizes!'
   if (claims[0].eveId !== false) {
@@ -96,7 +121,7 @@ const handleGiveMeIsk = async (payload) => {
   const data = {
     type: CHANNEL_MESSAGE_WITH_SOURCE,
     data: {
-      content: `${prizeText} ${eveSignUpText}`
+      content: `${prizeText} ${eveSignUpText} ${progressText}`
     }
   }
   if (showLink) {
