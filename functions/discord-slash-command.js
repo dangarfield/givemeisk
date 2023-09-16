@@ -116,7 +116,8 @@ const handleGiveMeIsk = async (payload) => {
   }
   let prizeText = `Nice, you've won! For now, we'll going to tell you that you've got \`${claims[0].prize}\` but the giveaway hasn't finished yet! Keep an eye out! There are more giveaways to win!`
   if (giveawayGroup.ended) {
-    prizeText = `Nice, it's done. All over, you've won hoard of stuff! ${claims.map(c => c.prize).map(p => `\n - ${p} `).join('')}`
+    const issuedText = claims.every(c => c.contractSent === true) ? 'We\'re still setting up contracts, have patience with us!' : 'You should have everything by now. Your contracts have been issued to you!'
+    prizeText = `Nice, it's done. All over, you've won hoard of stuff! ${claims.map(c => c.prize).map(p => `\n - ${p} `).join('')} ${issuedText}`
   }
   const data = {
     type: CHANNEL_MESSAGE_WITH_SOURCE,
